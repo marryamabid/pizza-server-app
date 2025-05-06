@@ -20,11 +20,6 @@ const __dirname = path.dirname(__filename);
 
 const db = await AsyncDatabase.open("./pizza.sqlite");
 
-server.register(fastifyStatic, {
-  root: path.join(__dirname, "public"),
-  prefix: "/public/",
-});
-
 server.get("/api/pizzas", async function getPizzas(req, res) {
   const pizzasPromise = db.all(
     "SELECT pizza_type_id, name, category, ingredients as description FROM pizza_types"
@@ -54,7 +49,7 @@ server.get("/api/pizzas", async function getPizzas(req, res) {
       name: pizza.name,
       category: pizza.category,
       description: pizza.description,
-      image: `/public/pizzas/${pizza.pizza_type_id}.webp`,
+      image: `/pizzas/${pizza.pizza_type_id}.webp`,
       sizes,
     };
   });
@@ -94,7 +89,7 @@ server.get("/api/pizza-of-the-day", async function getPizzaOfTheDay(req, res) {
     name: pizza.name,
     category: pizza.category,
     description: pizza.description,
-    image: `/public/pizzas/${pizza.id}.webp`,
+    image: `/pizzas/${pizza.id}.webp`,
     sizes: sizeObj,
   };
 
@@ -139,7 +134,7 @@ server.get("/api/order", async function getOrders(req, res) {
 
   const orderItems = orderItemsRes.map((item) =>
     Object.assign({}, item, {
-      image: `/public/pizzas/${item.pizzaTypeId}.webp`,
+      image: `/pizzas/${item.pizzaTypeId}.webp`,
       quantity: +item.quantity,
       price: +item.price,
     })
@@ -261,7 +256,7 @@ server.get("/api/past-order/:order_id", async function getPastOrder(req, res) {
 
     const formattedOrderItems = orderItems.map((item) =>
       Object.assign({}, item, {
-        image: `/public/pizzas/${item.pizzaTypeId}.webp`,
+        image: `/pizzas/${item.pizzaTypeId}.webp`,
         quantity: +item.quantity,
         price: +item.price,
       })
@@ -308,5 +303,16 @@ const start = async () => {
     process.exit(1);
   }
 };
-
 start();
+const HOST = process.env.RENDER ? "0.0.0.0" : "localhost";
+await server.listen({ host: HOST, port: PORT });
+
+server.addHook("preHandler", (req, res, done) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST");
+  res.header("Access-Control-Allow-Headers", "*");
+  if (req.method.toUpperCase() === "OPTIONS") {
+    return res.send();
+  }
+  done();
+});
