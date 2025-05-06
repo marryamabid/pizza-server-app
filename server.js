@@ -10,6 +10,7 @@ const server = fastify({
       target: "pino-pretty",
     },
   },
+  s,
 });
 
 const PORT = process.env.PORT || 3000;
